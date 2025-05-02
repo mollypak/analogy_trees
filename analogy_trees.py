@@ -5,7 +5,7 @@ from grakel import Graph as GrakelGraph
 from grakel.kernels import WeisfeilerLehman, VertexHistogram
 from zss import simple_distance, Node as ZSSNode
 stanza.download('en')
-
+import pickle
 nlp = stanza.Pipeline('en', processors='tokenize,pos,constituency')
 
 
@@ -101,6 +101,9 @@ for i in range(0,len(dataset_same_all)):
         sub_prop.append((K[0, 1] / K[0, 0] + K[1, 0] / K[1, 1])/2)
     prop.append(sum(sub_prop) / len(sub_prop))
 
+with open('prop.pkl', 'wb') as f:  # open a text file
+    pickle.dump(prop, f)
+f.close()
 
 
 
