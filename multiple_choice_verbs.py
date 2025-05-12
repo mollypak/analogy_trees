@@ -5,7 +5,7 @@ import stanza
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 nlp = stanza.Pipeline('en', processors='tokenize,pos')
-from transformers import AutoTokenizer, BertModel
+from transformers import AutoTokenizer, BertModel, AutoModel
 
 import gensim.downloader as api
 
@@ -14,6 +14,8 @@ model = BertModel.from_pretrained("google-bert/bert-base-uncased")
 correct = 0
 hard = 0
 random = 0
+guess = []
+
 for mult in multiple:
     answers = mult['choices']
     source = mult['source']
@@ -84,6 +86,7 @@ for mult in multiple:
                 del v1[row], v2[col]
         ave_score.append(sum(sim) / len(sim))
     a = ave_score.index(max(ave_score))
+    guess.append(a)
     tar = mult['types'].index("target")
     hard = mult['types'].index("noun")
     if a == tar:
@@ -98,6 +101,8 @@ fast_text_vectors = api.load('fasttext-wiki-news-subwords-300')
 correct = 0
 hard = 0
 random = 0
+guess = []
+
 for mult in multiple:
     answers = mult['choices']
     source = mult['source']
@@ -109,18 +114,19 @@ for mult in multiple:
     for sent in doc.sentences:
         for item in sent.words:
             if (item.upos == 'VERB')|(item.upos == 'AUX')|(item.upos == 'VB'):
-                v1.append(item.text.lower())
+                if item.text.lower() in fast_text_vectors.key_to_index:
+                    v1.append(item.text.lower())
     ave_score = []
     for answer in answers:
         answer = answer.replace("’s", " is")
         answer = answer.replace("'t", " not")
-
         v2 = []
         doc = nlp(answer)
         for sent in doc.sentences:
             for item in sent.words:
                 if (item.upos == 'VERB') | (item.upos == 'AUX') | (item.upos == 'VB'):
-                    v2.append(item.text.lower())
+                    if item.text.lower() in fast_text_vectors.key_to_index:
+                        v2.append(item.text.lower())
         doc = nlp(answer)
         sub_prop = []
         v1 = list(set(v1))
@@ -168,6 +174,7 @@ for mult in multiple:
                 del v1[row], v2[col]
         ave_score.append(sum(sim) / len(sim))
     a = ave_score.index(max(ave_score))
+    guess.append(a)
     tar = mult['types'].index("target")
     hard = mult['types'].index("noun")
     if a == tar:
@@ -177,12 +184,18 @@ for mult in multiple:
     else:
         random += 1
 
+w = []
+for i in range(len(multiple)):
+    g = guess[i]
+    w.append(multiple[i]['types'][g])
 
 tokenizer = AutoTokenizer.from_pretrained("huggyllama/llama-65b")
 model = BertModel.from_pretrained("huggyllama/llama-65b")
 correct = 0
 hard = 0
 random = 0
+guess = []
+
 for mult in multiple:
     answers = mult['choices']
     source = mult['source']
@@ -251,6 +264,7 @@ for mult in multiple:
                 del v1[row], v2[col]
         ave_score.append(sum(sim) / len(sim))
     a = ave_score.index(max(ave_score))
+    guess.append(a)
     tar = mult['types'].index("target")
     hard = mult['types'].index("noun")
     if a == tar:
@@ -262,10 +276,12 @@ for mult in multiple:
 
 
 tokenizer = AutoTokenizer.from_pretrained("google/flan-t5-xxl")
-model = BertModel.from_pretrained("google/flan-t5-xxl")
+model = AutoModel.from_pretrained("google/flan-t5-xxl")
 correct = 0
 hard = 0
 random = 0
+guess = []
+
 for mult in multiple:
     answers = mult['choices']
     source = mult['source']
@@ -336,6 +352,7 @@ for mult in multiple:
                 del v1[row], v2[col]
         ave_score.append(sum(sim) / len(sim))
     a = ave_score.index(max(ave_score))
+    guess.append(a)
     tar = mult['types'].index("target")
     hard = mult['types'].index("noun")
     if a == tar:
